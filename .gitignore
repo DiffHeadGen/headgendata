@@ -13,3 +13,4 @@ __pycache__/
 *.bak
 *.log
 *.egg-info
+data

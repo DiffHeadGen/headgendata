@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
-from .utils import get_image_paths, get_sub_dir, extract_all_frames, merget_video
+from .utils import get_image_paths, get_sub_dir, extract_all_frames, merge_video
 from itertools import islice
 import traceback
-from FileLock import FileLock
+from expdataloader.utils import FileLock
 
 EXP_DATA_DIR = Path(__file__).parent.parent.__str__()
 
@@ -80,7 +80,7 @@ class ExpDataLoader:
         return image_loader
 
     def merge_video(self, swap_dir, out_video_path):
-        merget_video(f"{swap_dir}/%06d.jpg", out_video_path)
+        merge_video(f"{swap_dir}/%06d.jpg", out_video_path)
         return out_video_path
 
     def run_video(self, source_img_path, target_video_path, out_video_path):

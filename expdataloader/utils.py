@@ -175,7 +175,7 @@ def extract_all_frames(video_path, out_img_dir, fps=25):
     os.system(ffmpeg_cmd)
 
 
-def merget_video(input_files, out_path):
+def merge_video(input_files, out_path):
     dir_name = os.path.dirname(out_path)
     os.makedirs(dir_name, exist_ok=True)
     os.system(f"ffmpeg -framerate 25 -i {input_files} -c:v libx264 -pix_fmt yuv420p -loglevel error {out_path}")
@@ -195,3 +195,30 @@ def get_sub_dir(dir_path, sub_name):
     sub_dir_path = os.path.join(dir_path, sub_name)
     os.makedirs(sub_dir_path, exist_ok=True)
     return sub_dir_path
+
+
+class FileLock:
+    def __init__(self, lock_file):
+        self.lock_file = lock_file
+        self.lock_fd = None
+
+        # 如果锁文件不存在，创建空文件
+        if not os.path.exists(lock_file):
+            open(lock_file, "w").close()
+
+    def acquire(self):
+        """尝试获取文件锁"""
+        try:
+            self.lock_fd = open(self.lock_file, "w")
+            fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except IOError:
+            return False
+
+    def release(self):
+        """释放文件锁"""
+        if self.lock_fd:
+            fcntl.flock(self.lock_fd, fcntl.LOCK_UN)
+            self.lock_fd.close()
+            self.lock_fd = None
+            os.remove(self.lock_file)  # 删除文件锁
