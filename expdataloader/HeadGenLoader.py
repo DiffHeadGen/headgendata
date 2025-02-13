@@ -128,7 +128,13 @@ class HeadGenLoader:
             print(f"Error occurred: {e}. Logged to {error_file_path}")
         finally:
             lock.release()
-
+               
+    def print_summary(self):
+        print(f"Name: {self.name}")
+        print(f"    Total: {len(self.all_data_rows)}")
+        print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])}")
+        print(f"    Unprocessed: {len(self.get_run_data_rows())}")
+        print(f"    Erorr: {len([file for file in os.listdir(self.lock_dir) if file.endswith('.error')])}")
 
 if __name__ == "__main__":
     print(DATA_DIR)
