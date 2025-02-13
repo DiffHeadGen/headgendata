@@ -1,7 +1,0 @@
-Metadata-Version: 2.2
-Name: exp_data
-Version: 0.1
-Requires-Dist: natsort
-Requires-Dist: Pillow
-Requires-Dist: opencv-python
-Dynamic: requires-dist

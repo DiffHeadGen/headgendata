@@ -1,8 +1,0 @@
-setup.py
-exp_data.egg-info/PKG-INFO
-exp_data.egg-info/SOURCES.txt
-exp_data.egg-info/dependency_links.txt
-exp_data.egg-info/requires.txt
-exp_data.egg-info/top_level.txt
-expdataloader/__init__.py
-expdataloader/utils.py
