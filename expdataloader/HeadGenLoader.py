@@ -12,22 +12,35 @@ VFHQ_DIR = (Path(__file__).parent.parent / "data/VFHQ_testset").__str__()
 
 
 class RowData:
-    def __init__(self, data_name: str, base_output_dir:str=None):
-        self.base_dir = os.path.join(VFHQ_DIR, data_name)
+    def __init__(
+        self,
+        data_name: str,
+        base_output_dir: str = None,
+        source_img_path: str = None,
+    ):
         self.data_name = data_name
+        self.base_dir = os.path.join(VFHQ_DIR, data_name)
+        assert os.path.exists(self.base_dir), f"Data dir not exists: {self.base_dir}"
         self.base_output_dir = base_output_dir
+        self.results_dir = get_sub_dir(self.base_output_dir, "results")
+        self.fast_review_dir = get_sub_dir(self.base_output_dir, "fast_review")
+        self._source_image_path = source_img_path
 
     @property
     def is_processed(self):
         return self.output_video_path and os.path.exists(self.output_video_path)
-    
+
     @property
     def output_video_path(self):
-        return os.path.join(self.base_output_dir, self.video_name)  
+        return os.path.join(self.results_dir, self.data_name, "output.mp4")
     
+    @property
+    def fast_review_video_path(self):
+        return os.path.join(self.fast_review_dir, self.video_name)
+
     @cached_property
     def output_dir(self):
-        return get_sub_dir(self.base_output_dir, self.data_name)
+        return get_sub_dir(self.results_dir, self.data_name)
 
     @cached_property
     def ori_imgs_dir(self):
@@ -48,8 +61,10 @@ class RowData:
             merge_video(f"{self.ori_imgs_dir}/%06d{self.img_ext}", path)
         return path
 
-    @cached_property
+    @property
     def source_img_path(self) -> str:
+        if self._source_image_path is not None and os.path.exists(self._source_image_path):
+            return self._source_image_path
         return self.ori_img_paths[0]
 
     @property
@@ -76,7 +91,7 @@ class HeadGenLoader:
     def __init__(self, name: str):
         self.base_dir = DATA_DIR
         self.name = name
-        self.output_dir = get_sub_dir(self.base_dir, self.name)
+        self.output_dir = get_sub_dir(self.base_dir, "output", self.name)
         self.lock_dir = get_sub_dir(self.output_dir, "lock")
 
     def get_all_data_rows(self):
@@ -128,13 +143,14 @@ class HeadGenLoader:
             print(f"Error occurred: {e}. Logged to {error_file_path}")
         finally:
             lock.release()
-               
+
     def print_summary(self):
         print(f"Name: {self.name}")
         print(f"    Total: {len(self.all_data_rows)}")
         print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])}")
         print(f"    Unprocessed: {len(self.get_run_data_rows())}")
         print(f"    Erorr: {len([file for file in os.listdir(self.lock_dir) if file.endswith('.error')])}")
+
 
 if __name__ == "__main__":
     print(DATA_DIR)

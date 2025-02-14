@@ -9,7 +9,7 @@ from natsort import natsorted
 import numpy as np
 import PIL
 from PIL.ImageFile import ImageFile
-
+import fcntl
 
 def extract_few_frames(video_path, indices=[55, 100]):
     """
@@ -165,14 +165,15 @@ def img_grid(image_paths: List[List], target_size=(512, 512), save_path="compari
     return save_path
 
 
-def extract_all_frames(video_path, out_img_dir, fps=25):
+def extract_all_frames(video_path, out_img_dir, fps=25, ext=".jpg"):
     cap_vid = cv2.VideoCapture(video_path)
     video_width = int(cap_vid.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(cap_vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
     os.makedirs(out_img_dir, exist_ok=True)
     resize_option = f"-s {video_width // 2 * 2}x{video_height // 2 * 2}" if (video_width % 2 == 1 or video_height % 2 == 1) else ""
-    ffmpeg_cmd = f"ffmpeg -loglevel error -y -i {video_path} {resize_option} -q:v 0 -vf 'fps={fps}' -start_number 0 {out_img_dir}/%06d.jpg"
-    os.system(ffmpeg_cmd)
+    ffmpeg_cmd = f"ffmpeg -loglevel error -y -i {video_path} {resize_option} -q:v 1 -vf 'fps={fps}' -start_number 0 {out_img_dir}/%06d{ext}"
+    # os.system(ffmpeg_cmd)
+    subprocess.run(ffmpeg_cmd, shell=True)
 
 
 def merge_video(input_files, out_path):
@@ -180,7 +181,7 @@ def merge_video(input_files, out_path):
     os.makedirs(dir_name, exist_ok=True)
     os.system(f"ffmpeg -framerate 25 -i {input_files} -c:v libx264 -pix_fmt yuv420p -loglevel error {out_path}")
     print(f"see {out_path}")
-    
+
 def crop_video_half(input_video, output_video):
     subprocess.run([
         "ffmpeg",
@@ -191,11 +192,10 @@ def crop_video_half(input_video, output_video):
     ])
 
 
-def get_sub_dir(dir_path, sub_name):
-    sub_dir_path = os.path.join(dir_path, sub_name)
+def get_sub_dir(dir_path, *sub_names):
+    sub_dir_path = os.path.join(dir_path, *sub_names)
     os.makedirs(sub_dir_path, exist_ok=True)
     return sub_dir_path
-
 
 class FileLock:
     def __init__(self, lock_file):

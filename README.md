@@ -7,9 +7,15 @@
 按照以下步骤安装 DiffHeadGen
 
 ```bash
+mkdir diffheadgen
+cd diffheadgen
 git clone https://github.com/DiffHeadGen/headgendata.git expdata
 cd expdata
 source create_env.sh
+
+# other repo
+git clone https://github.com/DiffHeadGen/Portrait-4D.git
+
 ```
 
 ## Usage
