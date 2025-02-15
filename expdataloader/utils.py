@@ -213,6 +213,9 @@ class FileLock:
             fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return True
         except IOError:
+            if self.lock_fd:
+                self.lock_fd.close()
+                self.lock_fd = None
             return False
 
     def release(self):
@@ -222,3 +225,20 @@ class FileLock:
             self.lock_fd.close()
             self.lock_fd = None
             os.remove(self.lock_file)  # 删除文件锁
+            
+    def __enter__(self):
+        """上下文管理器入口，自动加锁"""
+        if not self.acquire():
+            raise IOError("Failed to acquire lock")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理器出口，自动释放锁"""
+        self.release()
+        
+if __name__ == '__main__':
+    lock = FileLock("test.lock")
+    print(lock.acquire())
+
+    lock2 = FileLock("test.lock")
+    print(lock2.acquire())

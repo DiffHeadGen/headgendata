@@ -33,7 +33,7 @@ class RowData:
     @property
     def output_video_path(self):
         return os.path.join(self.results_dir, self.data_name, "output.mp4")
-    
+
     @property
     def fast_review_video_path(self):
         return os.path.join(self.fast_review_dir, self.video_name)
@@ -103,6 +103,10 @@ class HeadGenLoader:
     def all_data_rows(self):
         return list(self.get_all_data_rows())
 
+    @cached_property
+    def all_data_rows_dict(self):
+        return {row.name: row for row in self.all_data_rows}
+
     def get_run_data_rows(self):
         return [row for row in self.all_data_rows if not row.is_processed]
 
@@ -115,6 +119,15 @@ class HeadGenLoader:
             print(f"Processing: {row}")
             self.exp_data_row(row)
 
+    def run_test(self):
+        test_row = [
+            "Clip+RUcLuQ17UV8+P0+C1+F29582-29745",
+            "Clip+WDN72QkW5KQ+P3+C0+F95232-95342"
+        ]
+        for row_name in test_row:
+            row = self.all_data_rows_dict[row_name]
+            self.exp_data_row(row)
+
     def merge_video(self, image_dir, out_video_path):
         merge_video(f"{image_dir}/%06d.jpg", out_video_path)
         return out_video_path
@@ -123,26 +136,26 @@ class HeadGenLoader:
         raise NotImplementedError()
 
     def exp_data_row(self, row: RowData):
-        lock = FileLock(os.path.join(self.lock_dir, f"{row.name}.lock"))
-        if not lock.acquire():
-            print(f"Already running, skip: {row.name}")
-            return
+        lock_file = os.path.join(self.lock_dir, f"{row.name}.lock")
+        with FileLock(lock_file) as lock:
+            if not lock.acquire():
+                print(f"Already running, skip: {row.name}")
+                return
 
-        if row.is_processed:
-            print(f"out_video_path exists: {row.output_video_path}")
-            return
+            if row.is_processed:
+                print(f"out_video_path exists: {row.output_video_path}")
+                return
 
-        try:
-            print(f"Running: {row}")
-            self.run_video(row)
-        except Exception as e:
-            error_file_path = os.path.join(self.lock_dir, f"{row.name}.error")
-            with open(error_file_path, "w") as f:
-                f.write(f"{e}\n")
-                traceback.print_exc(file=f)
-            print(f"Error occurred: {e}. Logged to {error_file_path}")
-        finally:
-            lock.release()
+            try:
+                print(f"Running: {row}")
+                self.run_video(row)
+            except Exception as e:
+                error_file_path = os.path.join(self.lock_dir, f"{row.name}.error")
+                with open(error_file_path, "w") as f:
+                    f.write(f"{e}\n")
+                    traceback.print_exc(file=f)
+                    traceback.print_exc()
+                print(f"Error occurred: {e}. Logged to {error_file_path}")
 
     def print_summary(self):
         print(f"Name: {self.name}")
