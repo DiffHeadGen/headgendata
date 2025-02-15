@@ -197,6 +197,13 @@ def get_sub_dir(dir_path, *sub_names):
     os.makedirs(sub_dir_path, exist_ok=True)
     return sub_dir_path
 
+def get_first_mp4_file(directory):
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".mp4"):
+                return os.path.join(root, file)
+    return None
+
 class FileLock:
     def __init__(self, lock_file):
         self.lock_file = lock_file
@@ -227,9 +234,6 @@ class FileLock:
             os.remove(self.lock_file)  # 删除文件锁
             
     def __enter__(self):
-        """上下文管理器入口，自动加锁"""
-        if not self.acquire():
-            raise IOError("Failed to acquire lock")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
