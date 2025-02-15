@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 
 from natsort import natsorted
-from expdataloader.utils import get_image_paths, get_sub_dir, merge_video, FileLock
+from expdataloader.utils import extract_all_frames, get_image_paths, get_sub_dir, merge_video, FileLock
 import traceback
+import shutil
 
 DATA_DIR = (Path(__file__).parent.parent / "data").__str__()
 VFHQ_DIR = (Path(__file__).parent.parent / "data/VFHQ_testset").__str__()
@@ -33,6 +34,15 @@ class RowData:
     @property
     def output_video_path(self):
         return os.path.join(self.results_dir, self.data_name, "output.mp4")
+    
+    @property
+    def frames_dir(self):
+        return get_sub_dir(self.output_dir, "frames")
+    
+    def human_output(self):
+        if os.path.exists(self.output_video_path):
+            shutil.copyfile(self.output_video_path,self.fast_review_video_path)
+            extract_all_frames(self.output_video_path, self.frames_dir)
 
     @property
     def fast_review_video_path(self):
@@ -134,7 +144,7 @@ class HeadGenLoader:
 
     def run_video(self, row: RowData):
         raise NotImplementedError()
-
+        
     def exp_data_row(self, row: RowData):
         lock_file = os.path.join(self.lock_dir, f"{row.name}.lock")
         with FileLock(lock_file) as lock:
