@@ -11,6 +11,7 @@ import PIL
 from PIL.ImageFile import ImageFile
 import fcntl
 
+
 def extract_few_frames(video_path, indices=[55, 100]):
     """
     从视频中提取指定索引的帧，并将每帧保存到临时文件中。
@@ -97,6 +98,24 @@ def get_image_paths(directory):
                 image_paths.append(os.path.join(root, file))
     return natsorted(image_paths)
 
+def count_images(directory):
+    if not os.path.exists(directory):
+        return 0
+    count = 0
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith((".png", ".jpg", ".jpeg")):
+                count += 1
+    return count
+
+def count_files(directory):
+    if not os.path.exists(directory):
+        return 0
+    count = 0
+    for root, _, files in os.walk(directory):
+        for file in files:
+            count += 1
+    return count
 
 def get_video_paths(directory):
     image_paths = []
@@ -182,14 +201,9 @@ def merge_video(input_files, out_path):
     os.system(f"ffmpeg -framerate 25 -i {input_files} -c:v libx264 -pix_fmt yuv420p -loglevel error {out_path}")
     print(f"see {out_path}")
 
+
 def crop_video_half(input_video, output_video):
-    subprocess.run([
-        "ffmpeg",
-        "-i", input_video,
-        "-vf", "crop=in_w/2:in_h:in_w/2:0",
-        "-c:a", "copy",
-        output_video
-    ])
+    subprocess.run(["ffmpeg", "-i", input_video, "-vf", "crop=in_w/2:in_h:in_w/2:0", "-c:a", "copy", output_video])
 
 
 def get_sub_dir(dir_path, *sub_names):
@@ -197,12 +211,19 @@ def get_sub_dir(dir_path, *sub_names):
     os.makedirs(sub_dir_path, exist_ok=True)
     return sub_dir_path
 
+
+def change_extension(file_path, new_extension):
+    base = os.path.splitext(file_path)[0]
+    return base + new_extension
+
+
 def get_first_mp4_file(directory):
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".mp4"):
                 return os.path.join(root, file)
     return None
+
 
 class FileLock:
     def __init__(self, lock_file):
@@ -232,15 +253,16 @@ class FileLock:
             self.lock_fd.close()
             self.lock_fd = None
             os.remove(self.lock_file)  # 删除文件锁
-            
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """上下文管理器出口，自动释放锁"""
         self.release()
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     lock = FileLock("test.lock")
     print(lock.acquire())
 

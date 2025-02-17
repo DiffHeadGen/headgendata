@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from natsort import natsorted
-from expdataloader.utils import extract_all_frames, get_image_paths, get_sub_dir, merge_video, FileLock
+from expdataloader.utils import count_images, extract_all_frames, get_image_paths, get_sub_dir, merge_video, FileLock
 import traceback
 import shutil
 
@@ -18,14 +18,21 @@ class RowData:
         data_name: str,
         base_output_dir: str = None,
         source_img_path: str = None,
+        base_dir: str = VFHQ_DIR,
     ):
         self.data_name = data_name
-        self.base_dir = os.path.join(VFHQ_DIR, data_name)
-        assert os.path.exists(self.base_dir), f"Data dir not exists: {self.base_dir}"
+        self.base_dir = os.path.join(base_dir, data_name)
+        assert base_output_dir is not None, "base_output_dir is required"
         self.base_output_dir = base_output_dir
-        self.results_dir = get_sub_dir(self.base_output_dir, "results")
-        self.fast_review_dir = get_sub_dir(self.base_output_dir, "fast_review")
         self._source_image_path = source_img_path
+
+    @cached_property
+    def results_dir(self):
+        return get_sub_dir(self.base_output_dir, "results")
+
+    @cached_property
+    def fast_review_dir(self):
+        return get_sub_dir(self.base_output_dir, "fast_review")
 
     @property
     def is_processed(self):
@@ -34,19 +41,23 @@ class RowData:
     @property
     def output_video_path(self):
         return os.path.join(self.results_dir, self.data_name, "output.mp4")
-    
+
     @property
     def frames_dir(self):
         return get_sub_dir(self.output_dir, "frames")
-    
+
     def human_output(self):
         if os.path.exists(self.output_video_path):
-            shutil.copyfile(self.output_video_path,self.fast_review_video_path)
+            shutil.copyfile(self.output_video_path, self.fast_review_video_path)
             extract_all_frames(self.output_video_path, self.frames_dir)
 
     @property
     def fast_review_video_path(self):
         return os.path.join(self.fast_review_dir, self.video_name)
+    
+    def copy_output2fast_review(self):
+        if os.path.exists(self.output_video_path):
+            shutil.copyfile(self.output_video_path, self.fast_review_video_path)
 
     @cached_property
     def output_dir(self):
@@ -59,7 +70,11 @@ class RowData:
     @cached_property
     def ori_img_paths(self):
         return get_image_paths(self.ori_imgs_dir)
-
+    
+    @cached_property
+    def num_frames(self):
+        return count_images(self.ori_imgs_dir)
+    
     @property
     def target_img_paths(self):
         return self.ori_img_paths
@@ -104,10 +119,12 @@ class HeadGenLoader:
         self.output_dir = get_sub_dir(self.base_dir, "output", self.name)
         self.lock_dir = get_sub_dir(self.output_dir, "lock")
 
+    def create_row(self, data_name):
+        return RowData(data_name, self.output_dir)
+
     def get_all_data_rows(self):
         for data_name in natsorted(os.listdir(VFHQ_DIR)):
-            row = RowData(data_name, self.output_dir)
-            yield row
+            yield self.create_row(data_name)
 
     @cached_property
     def all_data_rows(self):
@@ -129,12 +146,13 @@ class HeadGenLoader:
             print(f"Processing: {row}")
             self.exp_data_row(row)
 
+    @cached_property
+    def test_data_rows(self):
+        ids = ["Clip+RUcLuQ17UV8+P0+C1+F29582-29745", "Clip+WDN72QkW5KQ+P3+C0+F95232-95342"]
+        return [self.all_data_rows_dict[id] for id in ids]
+
     def run_test(self):
-        test_row = [
-            "Clip+RUcLuQ17UV8+P0+C1+F29582-29745",
-            "Clip+WDN72QkW5KQ+P3+C0+F95232-95342"
-        ]
-        for row_name in test_row:
+        for row_name in self.test_data_rows:
             row = self.all_data_rows_dict[row_name]
             self.exp_data_row(row)
 
@@ -144,7 +162,7 @@ class HeadGenLoader:
 
     def run_video(self, row: RowData):
         raise NotImplementedError()
-        
+
     def exp_data_row(self, row: RowData):
         lock_file = os.path.join(self.lock_dir, f"{row.name}.lock")
         with FileLock(lock_file) as lock:
@@ -171,7 +189,7 @@ class HeadGenLoader:
         print(f"Name: {self.name}")
         print(f"    Total: {len(self.all_data_rows)}")
         print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])}")
-        print(f"    Unprocessed: {len(self.get_run_data_rows())}")
+        print(f"    Unprocessed: {len([row for row in self.all_data_rows if not row.is_processed])}")
         print(f"    Erorr: {len([file for file in os.listdir(self.lock_dir) if file.endswith('.error')])}")
 
 

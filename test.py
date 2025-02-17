@@ -22,5 +22,16 @@ def xportrait():
         shutil.copy(output_video_path,row.output_video_path)
         row.human_output()
 
+def mp_ldmks():
+    loader = HeadGenLoader("test")
+    no_ldmks = []
+    for row in loader.all_data_rows:
+        path = os.path.join(row.base_dir, "mp_ldmks/000000.mp")
+        if not os.path.exists(path):
+            # print(row, path)
+            print(row.name)
+            no_ldmks.append(row.name)
+    print(len(no_ldmks))
+
 if __name__ == '__main__':
-    xportrait()
+    mp_ldmks()

@@ -8,6 +8,7 @@ setup(
     install_requires=[
         'natsort',
         'Pillow',
-        'opencv-python'
+        'opencv-python',
+        'face-alignment',
     ]
 )
