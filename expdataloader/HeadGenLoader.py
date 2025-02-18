@@ -24,7 +24,7 @@ class RowData:
         self.base_dir = os.path.join(base_dir, data_name)
         assert base_output_dir is not None, "base_output_dir is required"
         self.base_output_dir = base_output_dir
-        self._source_image_path = source_img_path
+        self._source_img_path = source_img_path
 
     @cached_property
     def results_dir(self):
@@ -54,7 +54,7 @@ class RowData:
     @property
     def fast_review_video_path(self):
         return os.path.join(self.fast_review_dir, self.video_name)
-    
+
     def copy_output2fast_review(self):
         if os.path.exists(self.output_video_path):
             shutil.copyfile(self.output_video_path, self.fast_review_video_path)
@@ -70,11 +70,11 @@ class RowData:
     @cached_property
     def ori_img_paths(self):
         return get_image_paths(self.ori_imgs_dir)
-    
+
     @cached_property
     def num_frames(self):
         return count_images(self.ori_imgs_dir)
-    
+
     @property
     def target_img_paths(self):
         return self.ori_img_paths
@@ -88,8 +88,8 @@ class RowData:
 
     @property
     def source_img_path(self) -> str:
-        if self._source_image_path is not None and os.path.exists(self._source_image_path):
-            return self._source_image_path
+        if self._source_img_path is not None and os.path.exists(self._source_img_path):
+            return self._source_img_path
         return self.ori_img_paths[0]
 
     @property
@@ -116,8 +116,11 @@ class HeadGenLoader:
     def __init__(self, name: str):
         self.base_dir = DATA_DIR
         self.name = name
-        self.output_dir = get_sub_dir(self.base_dir, "output", self.name)
+        self.output_dir = get_sub_dir(self.base_dir, "test20250218", self.name)
         self.lock_dir = get_sub_dir(self.output_dir, "lock")
+
+    def get_output_dir(self, out_name):
+        return get_sub_dir(self.output_dir, out_name, self.name)
 
     def create_row(self, data_name):
         return RowData(data_name, self.output_dir)
@@ -150,6 +153,19 @@ class HeadGenLoader:
     def test_data_rows(self):
         ids = ["Clip+RUcLuQ17UV8+P0+C1+F29582-29745", "Clip+WDN72QkW5KQ+P3+C0+F95232-95342"]
         return [self.all_data_rows_dict[id] for id in ids]
+
+    @cached_property
+    def test_20250218_data_row(self):
+        id = "Clip+moIOVVEIffQ+P0+C1+F25505-25726"
+        row = self.all_data_rows_dict[id]
+        row._source_img_path = os.path.join(self.base_dir, "test20250218", "000000.jpg")
+        return row
+
+    def test_20250218(self):
+        row = self.test_20250218_data_row
+        self.run_video(row)
+        shutil.copy(row.target_video_path, row.output_dir)
+
 
     def run_test(self):
         for row_name in self.test_data_rows:
