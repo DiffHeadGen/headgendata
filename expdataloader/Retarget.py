@@ -7,7 +7,6 @@ from PIL import Image
 # from expdataloader.P4DLoader import *
 from tqdm import tqdm
 
-from expdataloader.P4DLoader import P4DLoader, P4DRowData
 from expdataloader.utils import change_extension, get_image_paths, merge_video
 
 

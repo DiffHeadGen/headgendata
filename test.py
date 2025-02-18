@@ -7,7 +7,7 @@ def num_all_frames():
     loader = HeadGenLoader("test")
     num_frames = 0
     for row in loader.all_data_rows:
-        num_frames += len(row.ori_img_paths)
+        num_frames += row.num_frames
     print(num_frames)
     
 def xportrait():
@@ -20,7 +20,7 @@ def xportrait():
             continue
         print(row)
         shutil.copy(output_video_path,row.output_video_path)
-        row.human_output()
+        row.output.human()
 
 def mp_ldmks():
     loader = HeadGenLoader("test")
@@ -29,8 +29,8 @@ def mp_ldmks():
         path = os.path.join(row.base_dir, "mp_ldmks/000000.mp")
         if not os.path.exists(path):
             # print(row, path)
-            print(row.name)
-            no_ldmks.append(row.name)
+            print(row.data_name)
+            no_ldmks.append(row.data_name)
     print(len(no_ldmks))
 
 if __name__ == '__main__':
