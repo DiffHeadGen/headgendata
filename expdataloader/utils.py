@@ -54,6 +54,17 @@ def extract_few_frames(video_path, indices=[55, 100]):
     return temp_files
 
 
+def get_video_num_frames(video_path):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Cannot open video file")
+        return 0
+
+    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return num_frames
+
+
 def resize_and_crop(img: ImageFile, target_width: int, target_height: int):
     """
     将图像缩放并裁剪到指定大小，同时保持原始比例。
@@ -98,6 +109,7 @@ def get_image_paths(directory):
                 image_paths.append(os.path.join(root, file))
     return natsorted(image_paths)
 
+
 def count_images(directory):
     if not os.path.exists(directory):
         return 0
@@ -108,6 +120,7 @@ def count_images(directory):
                 count += 1
     return count
 
+
 def count_files(directory):
     if not os.path.exists(directory):
         return 0
@@ -116,6 +129,7 @@ def count_files(directory):
         for file in files:
             count += 1
     return count
+
 
 def get_video_paths(directory):
     image_paths = []

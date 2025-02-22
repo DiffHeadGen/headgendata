@@ -76,8 +76,9 @@ def solve_transform(source_ldmks, target_ldmks):
 
 
 class Retargeter:
-    def __init__(self, use_cache=False):
+    def __init__(self, use_cache=False, black=False):
         self.use_cache = use_cache
+        self.black = black
         pass
 
     @cached_property
@@ -101,6 +102,8 @@ class Retargeter:
         target_ldmks = self.get_landmarks(target_img_path)
         scale, trans = solve_transform(target_ldmks[:, :2], source_ldmks[:, :2])
         source_img = Image.open(source_img_path)
+        if self.black:
+            source_img = Image.new("RGB", source_img.size, (0, 0, 0))
         target_img = Image.open(target_img_path)
         target_img = target_img.resize((int(target_img.width * scale), int(target_img.height * scale)))
         paste_pos = trans.astype(int)

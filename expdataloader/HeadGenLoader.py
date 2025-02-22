@@ -33,6 +33,10 @@ class OutputData:
         return get_sub_dir(self.results_dir, self.data_name)
 
     @cached_property
+    def feature_dir(self):
+        return get_sub_dir(self.output_dir, "feature")
+
+    @cached_property
     def video_path(self):
         return os.path.join(self.results_dir, self.data_name, "output.mp4")
 
@@ -131,6 +135,10 @@ class RowData:
     def source_img_path(self, img_path):
         self._source_img_path = img_path
 
+    @property
+    def source_name(self):
+        return os.path.splitext(os.path.basename(self.source_img_path))[0]
+
     @cached_property
     def img_ext(self):
         return self.target.img_ext
@@ -159,10 +167,11 @@ class HeadGenLoader(Generic[TROW]):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
+        self.exp_name = "output"
 
     @cached_property
     def output_dir(self):
-        return get_sub_dir(self.base_dir, "test20250218", self.name)
+        return get_sub_dir(self.base_dir, self.exp_name, self.name)
 
     @cached_property
     def lock_dir(self):
@@ -193,6 +202,7 @@ class HeadGenLoader(Generic[TROW]):
 
     @cached_property
     def test_20250218_row_data(self) -> TROW:
+        self.exp_name = "test20250218"
         source = TEMP_TEST_DATASET.values[0]
         target = VFHQ_TEST_DATASET.get("Clip+moIOVVEIffQ+P0+C1+F25505-25726")
         output = OutputData(self.output_dir, target.data_name)
@@ -240,7 +250,7 @@ class HeadGenLoader(Generic[TROW]):
 
     @cached_property
     def retargeter(self):
-        return Retargeter()
+        return Retargeter(black=True)
 
     def retarget_row_imgs(self, row: TROW, cropped_imgs_dir, output_dir):
         for img_path, cropped_img_path in tqdm(zip(row.target.img_paths, get_image_paths(cropped_imgs_dir)), total=row.num_frames):
