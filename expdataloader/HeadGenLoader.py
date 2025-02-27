@@ -60,7 +60,11 @@ class OutputData:
     @cached_property
     def ori_output_dir(self):
         return get_sub_dir(self.output_dir, "ori_output")
-
+    
+    @property
+    def num_ori_output(self):
+        return count_images(self.ori_output_dir)
+    
     @cached_property
     def ori_output_comp_dir(self):
         return get_sub_dir(self.output_dir, "ori_output_comp")
@@ -253,7 +257,7 @@ class HeadGenLoader(Generic[TROW]):
         return Retargeter(black=True)
 
     def retarget_row_imgs(self, row: TROW, cropped_imgs_dir, output_dir):
-        for img_path, cropped_img_path in tqdm(zip(row.target.img_paths, get_image_paths(cropped_imgs_dir)), total=row.num_frames):
+        for img_path, cropped_img_path in tqdm(zip(row.target.img_paths, get_image_paths(cropped_imgs_dir)), total=row.num_frames, desc="Retargeting"):
             name = os.path.basename(img_path)
             output_path = os.path.join(output_dir, change_extension(name, ".jpg"))
             self.retargeter.retarget(img_path, cropped_img_path, output_path)

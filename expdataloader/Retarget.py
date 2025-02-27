@@ -105,7 +105,7 @@ class Retargeter:
         if self.black:
             source_img = Image.new("RGB", source_img.size, (0, 0, 0))
         target_img = Image.open(target_img_path)
-        target_img = target_img.resize((int(target_img.width * scale), int(target_img.height * scale)))
+        target_img = target_img.resize((int(target_img.width * scale), int(target_img.height * scale)), Image.Resampling.LANCZOS)
         paste_pos = trans.astype(int)
         source_img.paste(target_img, tuple(paste_pos))
         source_img.save(output_path)

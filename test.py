@@ -33,5 +33,18 @@ def mp_ldmks():
             no_ldmks.append(row.data_name)
     print(len(no_ldmks))
 
+def fye_error():
+    data = [
+        ("Clip+G0DGRma_p48+P0+C0+F11208-11383",[29]),
+        ("Clip+moIOVVEIffQ+P0+C1+F25505-25726",[180,181,182,185,186])
+    ]
+    from expdataloader.dataset import VFHQ_TEST_DATASET
+    dataset = VFHQ_TEST_DATASET
+    for id, frame_ids, in data:
+        input = dataset.get(id)
+        for i in frame_ids:
+            print(input.img_paths[i])
+        
 if __name__ == '__main__':
-    mp_ldmks()
+    # mp_ldmks()
+    fye_error()

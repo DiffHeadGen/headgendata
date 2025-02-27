@@ -96,9 +96,5 @@ class P4DRetargetLoader(P4DLoader):
     def __init__(self, name="Protrait4Dv2"):
         super().__init__(name)
 
-    @cached_property
-    def retargeter(self):
-        return Retargeter()
-
     def run_video(self, row):
         self.retarget_video(row)
