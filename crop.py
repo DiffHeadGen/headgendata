@@ -1,4 +1,5 @@
 from functools import cached_property
+import hashlib
 import os
 from pathlib import Path
 import shlex
@@ -6,8 +7,10 @@ import subprocess
 import tempfile
 import cv2
 import face_alignment
+import insightface
 import numpy as np
-from expdataloader.utils import get_video_paths
+from tqdm import tqdm
+from expdataloader.utils import get_sub_dir, get_video_paths, get_video_num_frames
 from PIL import Image
 
 
@@ -99,7 +102,7 @@ def clac_quad(face_landmarks):
     c = eye_avg + eye_to_mouth * 0.1
     quad = np.stack([c - x - y, c - x + y, c + x + y, c + x - y])
     qsize = np.hypot(*x) * 2
-    return quad, qsize
+    return c, qsize
 
 
 class LazyVideoWriter:
@@ -137,13 +140,36 @@ class LazyVideoWriter:
             print(f"An exception occurred: {exc_val}")
         return False
 
+class FaceDetector:
+    def __init__(self, ctx_id=0, det_thresh=0.5, det_size=(640, 640)) -> None:
+        model = insightface.app.FaceAnalysis(
+            allowed_modules=["detection", "recognition"],
+            # name="buffalo_sc",
+        )
+        model.prepare(ctx_id=ctx_id, det_thresh=det_thresh, det_size=det_size)
+        self.model = model
+
+    def get(self, frame) -> list:
+        faces = self.model.get(frame)
+        largest_face = max(faces, key=lambda face: (face.bbox[2] - face.bbox[0]) * (face.bbox[3] - face.bbox[1]))
+        return largest_face
+    
 
 class VideoCropper:
     def __init__(self):
         pass
 
-    def crop_video(self, video_path, output_path):
-        save_frames_to_video(self.process_video(video_path, output_path), output_path)
+    def crop_video(self, video_path, output_path, scale=1.8):
+        save_frames_to_video(self.process_video(video_path, scale=scale), output_path)
+        print(f"see {output_path }")
+
+    @cached_property
+    def ldmk_cache_dir(self):
+        return get_sub_dir(".cache/ldmks")
+
+    @cached_property
+    def face_detector(self):
+        return FaceDetector()
 
     @cached_property
     def landmark_detector(self):
@@ -157,28 +183,60 @@ class VideoCropper:
             np.save(cache_path, landmarks)
         return landmarks
 
-    def process_video(self, video_path):
+    def test(self, video_path):
         first_frame = get_first_frame(video_path)
-        landmarks = self.get_landmarks(first_frame, "ldmk.npy")
-        quad, qsize = clac_quad(landmarks)
+        ldmks_path = os.path.join(self.ldmk_cache_dir, hashlib.md5(video_path.encode()).hexdigest() + ".npy")
+        landmarks = self.get_landmarks(first_frame, ldmks_path)
+        c, qsize = clac_quad(landmarks)
         img = Image.fromarray(first_frame)
         border = max(int(np.rint(qsize * 0.1)), 3)
-        crop = (int(np.floor(min(quad[:, 0]))), int(np.floor(min(quad[:, 1]))), int(np.ceil(max(quad[:, 0]))), int(np.ceil(max(quad[:, 1]))))
-        crop = (max(crop[0] - border, 0), max(crop[1] - border, 0), min(crop[2] + border, img.size[0]), min(crop[3] + border, img.size[1]))
-        img.crop(crop).save("test.jpg")
-        return
+        r = min(qsize // 2 + border, img.size[0] // 2, img.size[1] // 2)
+        x = max(r, min(img.size[0] - r, c[0]))
+        y = max(r, min(img.size[1] - r, c[1]))
+        crop = (int(x - r), int(y - r), int(x + r), int(y + r))
+        print(img.size, crop)
 
-        for frame in video_stream(video_path):
-            yield frame
+    def process_video(self, video_path, scale=1.8, fps=25, output_size=512):
+        first_frame = get_first_frame(video_path)
+        face = self.face_detector.get(first_frame)
+        bbox = face.bbox
+        l, t, r, b = bbox
+        # extend to square
+        img = Image.fromarray(first_frame)
+        cx, cy = (l + r) // 2, (t + b) // 2
+        ext = max((r - l) // 2, (b - t) // 2)
+        r = min(int(ext * scale), img.size[0] // 2, img.size[1] // 2)
+        x = max(r, min(img.size[0] - r, cx))
+        y = max(r, min(img.size[1] - r, cy))
+        crop = (int(x - r), int(y - r), int(x + r), int(y + r))
+        print(img.size, crop)
+
+        with tempfile.NamedTemporaryFile("w", suffix=".mp4") as tmp_file:
+            cmd = f"ffmpeg -i {video_path} -r {fps} -y -hide_banner -loglevel error {tmp_file.name}"
+            assert subprocess.run(shlex.split(cmd)).returncode == 0
+            for i, frame in enumerate(tqdm(video_stream(tmp_file.name), total=get_video_num_frames(tmp_file.name))):
+                img = Image.fromarray(frame)
+                img = img.crop(crop).resize((output_size, output_size), Image.Resampling.LANCZOS)
+                yield np.array(img)
+                # if i > 10:
+                #     break
 
 
 def main():
     video_paths = get_video_paths(INPUT_DIR)
     cropper = VideoCropper()
-    print(video_paths)
-    # cropper.crop_video(video_paths[0], "output.mp4")
+    output_dir = f"./output"
+    os.makedirs(output_dir, exist_ok=True)
+    for video_path in video_paths:
+        video_name: str = os.path.basename(video_path)
+        if not video_name.startswith("cam"):
+            continue
+        print(video_path)
+        output_path = os.path.join(output_dir, video_name)
+        cropper.crop_video(video_path, output_path)
 
 
 if __name__ == "__main__":
     INPUT_DIR = "/home/juyonggroup/shared3dv/dataset/orz/raw_dataset/089/EXP-8-jaw-1"
+    # need to run: ml cudnn/8.9.1.23/cuda12
     main()

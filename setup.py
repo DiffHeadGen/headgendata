@@ -10,5 +10,9 @@ setup(
         'Pillow',
         'opencv-python',
         'face-alignment',
+        'moviepy',
+        'insightface',
+        'onnxruntime-gpu',
+        'numpy==1.26.0'
     ]
 )
