@@ -19,6 +19,10 @@ class InputData:
         self.base_dir = os.path.join(dataset_dir, data_name)
 
     @cached_property
+    def source_img_path(self):
+        return os.path.join(self.base_dir, "source.jpg")
+    
+    @cached_property
     def imgs_dir(self):
         return os.path.join(self.base_dir, "ori_imgs")
 

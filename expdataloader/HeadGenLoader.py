@@ -187,7 +187,10 @@ class HeadGenLoader(Generic[TROW]):
 
     def get_all_data_rows(self):
         for target in self.dataset.values:
-            yield self.row_type(target, target, OutputData(self.output_dir, target.data_name))
+            row = self.row_type(target, target, OutputData(self.output_dir, target.data_name))
+            if os.path.exists(target.source_img_path):
+                row.source_img_path = target.source_img_path
+            yield row
 
     @cached_property
     def all_data_rows(self) -> List[TROW]:

@@ -9,10 +9,14 @@ setup(
         'natsort',
         'Pillow',
         'opencv-python',
-        'face-alignment',
         'moviepy',
-        'insightface',
-        'onnxruntime-gpu',
         'numpy==1.26.0'
-    ]
+        'face-alignment',
+    ],
+    extras_require={
+        'face': [
+            'insightface',
+            'onnxruntime-gpu',
+        ]
+    }
 )

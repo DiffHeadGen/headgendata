@@ -58,12 +58,11 @@ class P4DOutputData(OutputData):
     def crop_params_dir(self):
         return os.path.join(self.crop_dir, "crop_params")
 
-
 class P4DRowData(RowData):
-    def __init__(self, source: InputData, target: InputData, output: P4DOutputData):
+    def __init__(self, source: InputData, target: InputData, output: OutputData):
         super().__init__(source, target, output)
         self.output = P4DOutputData(output.base_dir, output.data_name)
-        self.source_output = P4DOutputData(output.base_dir, source.data_name)
+        self.source_output = P4DOutputData(get_sub_dir(output.base_dir, "source"), source.data_name)
 
     @property
     def is_img_generated(self):
