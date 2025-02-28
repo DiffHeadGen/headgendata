@@ -10,7 +10,7 @@ from expdataloader.utils import count_images, get_image_paths, get_sub_dir, merg
 DATA_DIR = (Path(__file__).parent.parent / "data").__str__()
 VFHQ_DIR = (Path(__file__).parent.parent / "data/VFHQ_testset").__str__()
 TEMP_TEST_DIR = (Path(__file__).parent.parent / "data/temp_testset").__str__()
-
+ORZ_DIR = (Path(__file__).parent.parent / "data/orz_testset").__str__()
 
 class InputData:
     def __init__(self, dataset_dir, data_name):
@@ -86,6 +86,16 @@ class VFHQTestDataSet(InputDataSet):
 
 VFHQ_TEST_DATASET = VFHQTestDataSet()
 
+class ORZTestDataSet(InputDataSet):
+    def __init__(self):
+        super().__init__(ORZ_DIR)
+        
+    def get_all(self):
+        for row in super().get_all():
+            if "EXP" in row.data_name:
+                yield row
+
+ORZ_TEST_DATASET = ORZTestDataSet()
 
 class TempTestDataSet(InputDataSet):
     def __init__(self):

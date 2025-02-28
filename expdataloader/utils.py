@@ -130,6 +130,8 @@ def count_files(directory):
             count += 1
     return count
 
+def get_file_name_without_ext(file_path):
+    return os.path.splitext(os.path.basename(file_path))[0]
 
 def get_video_paths(directory):
     image_paths = []

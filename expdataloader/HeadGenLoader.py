@@ -5,8 +5,8 @@ from pathlib import Path
 from natsort import natsorted
 from tqdm import tqdm
 from expdataloader.Retarget import Retargeter
-from expdataloader.utils import change_extension, count_images, extract_all_frames, get_image_paths, get_sub_dir, merge_video, FileLock
-from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET
+from expdataloader.utils import change_extension, count_images, extract_all_frames, get_file_name_without_ext, get_image_paths, get_sub_dir, merge_video, FileLock
+from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, InputDataSet
 import traceback
 import shutil
 from typing import TypeVar, Generic, List
@@ -171,7 +171,8 @@ class HeadGenLoader(Generic[TROW]):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
-        self.exp_name = "output"
+        self.exp_name = "orz_output"
+        self.dataset:InputDataSet = ORZ_TEST_DATASET
 
     @cached_property
     def output_dir(self):
@@ -185,12 +186,19 @@ class HeadGenLoader(Generic[TROW]):
         return get_sub_dir(self.output_dir, out_name, self.name)
 
     def get_all_data_rows(self):
-        for target in VFHQ_TEST_DATASET.values:
+        for target in self.dataset.values:
             yield self.row_type(target, target, OutputData(self.output_dir, target.data_name))
 
     @cached_property
     def all_data_rows(self) -> List[TROW]:
         return list(self.get_all_data_rows())
+    
+    @cached_property
+    def all_data_rows_dict(self):
+        return {row.data_name: row for row in self.all_data_rows}
+    
+    def get_row(self, data_name):
+        return self.all_data_rows_dict[data_name]
 
     def print_info(self):
         for i, row in enumerate(self.all_data_rows):
@@ -257,9 +265,14 @@ class HeadGenLoader(Generic[TROW]):
         return Retargeter(black=True)
 
     def retarget_row_imgs(self, row: TROW, cropped_imgs_dir, output_dir):
-        for img_path, cropped_img_path in tqdm(zip(row.target.img_paths, get_image_paths(cropped_imgs_dir)), total=row.num_frames, desc="Retargeting"):
-            name = os.path.basename(img_path)
-            output_path = os.path.join(output_dir, change_extension(name, ".jpg"))
+        cropped_imgs_dict = {get_file_name_without_ext(img_path): img_path for img_path in get_image_paths(cropped_imgs_dir)}
+        for img_path in tqdm(row.target.img_paths, total=row.num_frames, desc="Retargeting"):
+            name = get_file_name_without_ext(img_path)
+            if not name in cropped_imgs_dict:
+                print(f"Missing cropped img: {name}")
+                continue
+            cropped_img_path = cropped_imgs_dict[name]
+            output_path = os.path.join(output_dir, name+".jpg")
             self.retargeter.retarget(img_path, cropped_img_path, output_path)
 
     def clear_output(self, row: TROW):
@@ -283,7 +296,5 @@ class HeadGenLoader(Generic[TROW]):
 if __name__ == "__main__":
     print(DATA_DIR)
     loader = HeadGenLoader("test")
-    for row in loader.all_data_rows:
-        print(row.output_dir)
     # row = loader.all_data_rows[0]
     # loader.exp_data_row(row)

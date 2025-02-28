@@ -1,7 +1,8 @@
+from functools import cached_property
 import os
 import shutil
 from expdataloader import HeadGenLoader
-from expdataloader.utils import get_sub_dir, get_first_mp4_file
+from expdataloader.utils import count_images, get_sub_dir, get_first_mp4_file
 
 def num_all_frames():
     loader = HeadGenLoader("test")
@@ -44,7 +45,28 @@ def fye_error():
         input = dataset.get(id)
         for i in frame_ids:
             print(input.img_paths[i])
+    
+def ours_fast_review():
+    pass    
+
+from expdataloader import *
+
+
+def ours():
+    loader = RowDataLoader("ours")
+    for row in loader.all_data_rows:
+        dir = os.path.join(row.output.base_dir,"ori_output", row.output.data_name, "frames")
+        # print(row,"imgs:",count_images(dir))
+        if count_images(dir) < 70:
+            print(row.data_name)
+            # print(dir)
+
+def merge_video():
+    from expdataloader.dataset import ORZ_TEST_DATASET
+    dataset = ORZ_TEST_DATASET
+    for data in dataset.values:
+        print(data.video_path)
         
 if __name__ == '__main__':
     # mp_ldmks()
-    fye_error()
+    merge_video()
