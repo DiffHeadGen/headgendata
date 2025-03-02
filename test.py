@@ -11,6 +11,7 @@ class ExpName:
     XPortrait = "XPortrait"
     test = "test"
     FollowYourEmoji = "FollowYourEmoji"
+    VOODOO3D = "VOODOO3D"
 
 
 def num_all_frames():
@@ -84,9 +85,14 @@ def check_output():
     for row in loader.all_data_rows:
         print(row, row.num_frames - count_images(row.frames_dir))
 
-
+def testvoodoo():
+    loader = RowDataLoader(ExpName.VOODOO3D)
+    for row in loader.all_data_rows:
+        print(row.source_img_path)
+        
 if __name__ == "__main__":
     # mp_ldmks()
     # merge_video()
     # xportrait()
-    check_output()
+    # check_output()
+    testvoodoo()

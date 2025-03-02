@@ -6,7 +6,7 @@ from natsort import natsorted
 from tqdm import tqdm
 from expdataloader.Retarget import Retargeter
 from expdataloader.utils import change_extension, count_images, extract_all_frames, get_file_name_without_ext, get_image_paths, get_sub_dir, merge_video, FileLock
-from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, InputDataSet
+from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, COMBINED_TEST_DATASET, InputDataSet
 import traceback
 import shutil
 from typing import TypeVar, Generic, List
@@ -172,7 +172,7 @@ class HeadGenLoader(Generic[TROW]):
         self.name = name
         self.row_type = row_type
         self.exp_name = "combined_output"
-        self.dataset:InputDataSet = ORZ_TEST_DATASET
+        self.dataset:InputDataSet = COMBINED_TEST_DATASET
 
     @cached_property
     def output_dir(self):
@@ -189,7 +189,8 @@ class HeadGenLoader(Generic[TROW]):
         for target in self.dataset.values:
             row = self.row_type(target, target, OutputData(self.output_dir, target.data_name))
             if os.path.exists(target.source_img_path):
-                row.source_img_path = target.source_img_path
+                row.source_img_path = os.path.join(row.output_dir, os.path.basename(target.source_img_path))
+                shutil.copyfile(target.source_img_path, row.source_img_path)
             yield row
 
     @cached_property
