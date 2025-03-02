@@ -171,7 +171,7 @@ class HeadGenLoader(Generic[TROW]):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
-        self.exp_name = "orz_output"
+        self.exp_name = "combined_output"
         self.dataset:InputDataSet = ORZ_TEST_DATASET
 
     @cached_property

@@ -7,10 +7,12 @@ from natsort import natsorted
 from expdataloader.utils import count_images, get_image_paths, get_sub_dir, merge_video
 
 
-DATA_DIR = (Path(__file__).parent.parent / "data").__str__()
-VFHQ_DIR = (Path(__file__).parent.parent / "data/VFHQ_testset").__str__()
-TEMP_TEST_DIR = (Path(__file__).parent.parent / "data/temp_testset").__str__()
-ORZ_DIR = (Path(__file__).parent.parent / "data/orz_testset").__str__()
+BASE_DIR = Path(__file__).parent.parent / "data"
+VFHQ_DIR = str(BASE_DIR / "VFHQ_testset")
+TEMP_TEST_DIR = str(BASE_DIR / "temp_testset")
+ORZ_DIR = str(BASE_DIR / "orz_testset")
+COMBINED_DIR = str(BASE_DIR / "combined_testset")
+
 
 class InputData:
     def __init__(self, dataset_dir, data_name):
@@ -20,8 +22,8 @@ class InputData:
 
     @cached_property
     def source_img_path(self):
-        return os.path.join(self.base_dir, "source.jpg")
-    
+        return os.path.join(self.base_dir, "source_cross.jpg")
+
     @cached_property
     def imgs_dir(self):
         return os.path.join(self.base_dir, "ori_imgs")
@@ -90,16 +92,30 @@ class VFHQTestDataSet(InputDataSet):
 
 VFHQ_TEST_DATASET = VFHQTestDataSet()
 
+
 class ORZTestDataSet(InputDataSet):
     def __init__(self):
         super().__init__(ORZ_DIR)
-        
+
     def get_all(self):
         for row in super().get_all():
             if "EXP" in row.data_name:
                 yield row
 
+
 ORZ_TEST_DATASET = ORZTestDataSet()
+
+
+class CombinedTestDataSet(InputDataSet):
+    def __init__(self):
+        super().__init__(COMBINED_DIR)
+
+    def get_all(self):
+        for row in super().get_all():
+            if "EXP" in row.data_name or "Clip" in row.data_name:
+                yield row
+
+COMBINED_TEST_DATASET = CombinedTestDataSet()
 
 class TempTestDataSet(InputDataSet):
     def __init__(self):
