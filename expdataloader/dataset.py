@@ -71,6 +71,13 @@ class InputDataSet:
     def dict(self):
         return {row.data_name: row for row in self.values}
 
+    @cached_property
+    def num_frames_all(self):
+        frames = 0
+        for data in self.values:
+            frames += data.num_frames
+        return frames
+
 
 class VFHQTestDataSet(InputDataSet):
     def __init__(self):
@@ -115,7 +122,9 @@ class CombinedTestDataSet(InputDataSet):
             if "EXP" in row.data_name or "Clip" in row.data_name:
                 yield row
 
+
 COMBINED_TEST_DATASET = CombinedTestDataSet()
+
 
 class TempTestDataSet(InputDataSet):
     def __init__(self):

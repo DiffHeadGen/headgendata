@@ -167,12 +167,13 @@ TROW = TypeVar("TROW", bound=RowData)
 
 
 class HeadGenLoader(Generic[TROW]):
+    dataset:InputDataSet = COMBINED_TEST_DATASET
     def __init__(self, name: str, row_type=RowData):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
         self.exp_name = "combined_output"
-        self.dataset:InputDataSet = COMBINED_TEST_DATASET
+        # self.dataset:InputDataSet = COMBINED_TEST_DATASET
 
     @cached_property
     def output_dir(self):
@@ -197,6 +198,14 @@ class HeadGenLoader(Generic[TROW]):
     @cached_property
     def all_data_rows(self) -> List[TROW]:
         return list(self.get_all_data_rows())
+    
+    @property
+    def num_processed_frames(self):
+        num = 0
+        for row in self.all_data_rows:
+            if row.is_processed:
+                num+=row.num_frames
+        return num
     
     @cached_property
     def all_data_rows_dict(self):

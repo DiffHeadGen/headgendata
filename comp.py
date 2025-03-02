@@ -8,3 +8,4 @@ exp_name_list = ["Protrait4Dv2", "LivePortrait", "VOODOO3D", "GAGAvatar", "Follo
 for exp_name in exp_name_list:
     loader = RowDataLoader(exp_name)
     loader.print_summary()
+    print(loader.num_processed_frames, "/", RowDataLoader.dataset.num_frames_all)
