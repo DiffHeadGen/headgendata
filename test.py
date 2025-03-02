@@ -3,6 +3,8 @@ from functools import cached_property
 import os
 import shutil
 from expdataloader import *
+from expdataloader.HeadGenLoader import OutputData
+from expdataloader.P4DLoader import P4DOutputData
 from expdataloader.utils import count_images, get_sub_dir, get_first_mp4_file
 
 
@@ -89,10 +91,19 @@ def testvoodoo():
     loader = RowDataLoader(ExpName.VOODOO3D)
     for row in loader.all_data_rows:
         print(row.source_img_path)
-        
+
+def copy_p4dv2():
+    from expdataloader.dataset import VFHQ_TEST_DATASET,ORZ_TEST_DATASET
+    for input in VFHQ_TEST_DATASET.values+ORZ_TEST_DATASET.values:
+        output = P4DOutputData("data/VFHQ_output/Protrait4Dv2", input.data_name)
+        target_dir = get_sub_dir("/home/ldy/repos/diffheadgen/Portrait-4D/output", input.data_name)
+        print(output.crop_dir,target_dir)
+        shutil.copytree(output.crop_dir, os.path.join(target_dir,"crop"))
+    
 if __name__ == "__main__":
     # mp_ldmks()
     # merge_video()
     # xportrait()
     # check_output()
-    testvoodoo()
+    # testvoodoo()
+    copy_p4dv2()

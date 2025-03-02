@@ -190,7 +190,8 @@ class HeadGenLoader(Generic[TROW]):
             row = self.row_type(target, target, OutputData(self.output_dir, target.data_name))
             if os.path.exists(target.source_img_path):
                 row.source_img_path = os.path.join(row.output_dir, os.path.basename(target.source_img_path))
-                shutil.copyfile(target.source_img_path, row.source_img_path)
+                if not os.path.exists(row.source_img_path):
+                    shutil.copyfile(target.source_img_path, row.source_img_path)
             yield row
 
     @cached_property
@@ -291,9 +292,7 @@ class HeadGenLoader(Generic[TROW]):
 
     def print_summary(self):
         print(f"Name: {self.name}")
-        print(f"    Total: {len(self.all_data_rows)}")
-        print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])}")
-        print(f"    Unprocessed: {len([row for row in self.all_data_rows if not row.is_processed])}")
+        print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])} of {len(self.all_data_rows)}")
         print(f"    Erorr: {len([file for file in os.listdir(self.lock_dir) if file.endswith('.error')])}")
 
 
