@@ -106,4 +106,6 @@ if __name__ == "__main__":
     # xportrait()
     # check_output()
     # testvoodoo()
-    copy_p4dv2()
+    # copy_p4dv2()
+    loader = RowDataLoader("ours_v2")
+    loader.print_summary()

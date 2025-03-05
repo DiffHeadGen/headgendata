@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import cached_property
 import os
 from pathlib import Path
@@ -47,6 +48,10 @@ class OutputData:
     @cached_property
     def frames_dir(self):
         return get_sub_dir(self.output_dir, "frames")
+    
+    @cached_property
+    def img_paths(self):
+        return get_image_paths(self.frames_dir)
 
     def human(self):
         if os.path.exists(self.video_path):
@@ -165,15 +170,35 @@ class RowData:
 
 TROW = TypeVar("TROW", bound=RowData)
 
+class DataSetNames(Enum):
+    VFHQ = "VFHQ"
+    TEMP = "TEMP"
+    ORZ = "ORZ"
+    COMBINED = "COMBINED"
 
 class HeadGenLoader(Generic[TROW]):
-    dataset:InputDataSet = COMBINED_TEST_DATASET
+    dataset:InputDataSet
+    exp_name:str 
     def __init__(self, name: str, row_type=RowData):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
-        self.exp_name = "combined_output"
-        # self.dataset:InputDataSet = COMBINED_TEST_DATASET
+        self.set_dataset(DataSetNames.COMBINED)
+    
+    def set_dataset(self, dataset_name: DataSetNames):
+        self.dataset_name = dataset_name
+        if dataset_name == DataSetNames.VFHQ:
+            self.dataset = VFHQ_TEST_DATASET
+            self.exp_name = "vfhq_output"
+        elif dataset_name == DataSetNames.TEMP:
+            self.dataset = TEMP_TEST_DATASET
+            self.exp_name = "temp_output"
+        elif dataset_name == DataSetNames.ORZ:
+            self.dataset = ORZ_TEST_DATASET
+            self.exp_name = "orz_output"
+        elif dataset_name == DataSetNames.COMBINED:
+            self.dataset = COMBINED_TEST_DATASET
+            self.exp_name = "combined_output"
 
     @cached_property
     def output_dir(self):
@@ -211,7 +236,7 @@ class HeadGenLoader(Generic[TROW]):
     def all_data_rows_dict(self):
         return {row.data_name: row for row in self.all_data_rows}
     
-    def get_row(self, data_name):
+    def get_row(self, data_name)->TROW:
         return self.all_data_rows_dict[data_name]
 
     def print_info(self):
@@ -302,6 +327,7 @@ class HeadGenLoader(Generic[TROW]):
     def print_summary(self):
         print(f"Name: {self.name}")
         print(f"    Processed: {len([row for row in self.all_data_rows if row.is_processed])} of {len(self.all_data_rows)}")
+        print(f"    Processed: {self.num_processed_frames} / {self.dataset.num_frames_all}")
         print(f"    Erorr: {len([file for file in os.listdir(self.lock_dir) if file.endswith('.error')])}")
 
 

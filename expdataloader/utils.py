@@ -143,12 +143,12 @@ def get_video_paths(directory):
     return natsorted(image_paths)
 
 
-def img_grid(image_paths: List[List], target_size=(512, 512), save_path="comparison_grid.png", vertical_margins=None, horizontal_margins=None):
+def img_grid(image_paths: np.ndarray, target_size=(512, 512), save_path="comparison_grid.png", vertical_margins=None, horizontal_margins=None):
     """
     使用PIL直接拼接图片并保存结果，避免通过matplotlib缩放引起的模糊。
 
     参数:
-        image_paths (list of list of str): 6x12 的矩阵，每个元素是图像文件的路径。
+        image_paths (list of list of str): hxw 的矩阵，每个元素是图像文件的路径。
         target_size (tuple): 每张图片的目标大小 (width, height)。
         save_path (str): 拼接后的图像保存路径。
         vertical_margins (list of int): 每个列间的白边宽度列表，应有 (cols-1) 个元素。
@@ -180,7 +180,7 @@ def img_grid(image_paths: List[List], target_size=(512, 512), save_path="compari
         x_offset = 0  # 每行的水平偏移量
         y_offset = i * target_height + sum(horizontal_margins[:i])  # 每行的垂直偏移量
         for j in range(cols):
-            img_path = image_paths[i][j]
+            img_path:str = image_paths[i][j]
             img = Image.open(img_path)
 
             # 缩放图片到目标大小
