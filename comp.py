@@ -1,16 +1,17 @@
+from dataclasses import dataclass
 from functools import cached_property
 import os
 from pathlib import Path
 import shlex
 import shutil
 import subprocess
+from typing import List
 
 import numpy as np
 from tqdm import tqdm
 from expdataloader import *
-from expdataloader.utils import img_grid
-
-HeadGenLoader
+from expdataloader.utils import LazyVideoWriter, img_grid
+from expdataloader.dataset import DataSetNames
 
 
 class CompLoader(RowDataLoader):
@@ -130,6 +131,92 @@ class CompLoaderImage(RowDataLoader):
         self.comp_cross_img_all()
 
 
+@dataclass
+class VideoTypeData:
+    ids: List[str]
+    loader: List[RowDataLoader]
+    dir: str
+
+
+from PIL import Image
+from expdataloader.utils import save_frames_to_video
+
+
+class CompLoaderVideo(RowDataLoader):
+    @cached_property
+    def exp_name_list(self):
+        return ["ROME", "Protrait4Dv2", "VOODOO3D", "GAGAvatar", "FollowYourEmoji", "XPortrait", "ours"]
+
+    @cached_property
+    def save_dir(self):
+        return get_sub_dir("data", "comp_video")
+
+    @cached_property
+    def orz_loader(self):
+        return [RowDataLoader(exp_name, dataset_name=DataSetNames.ORZ) for exp_name in self.exp_name_list]
+
+    @cached_property
+    def combined_loader(self):
+        return [RowDataLoader(exp_name, dataset_name=DataSetNames.COMBINED) for exp_name in self.exp_name_list]
+
+    @cached_property
+    def combined_video_dir(self):
+        return get_sub_dir(self.save_dir, "combined")
+
+    @cached_property
+    def orz_video_dir(self):
+        return get_sub_dir(self.save_dir, "orz")
+
+    def copy_video(self):
+        data = {
+            "combined": VideoTypeData(
+                ids=[
+                    "323_EXP-5-mouth_cam_222200047",
+                    "323_EXP-8-jaw-1_cam_222200038",
+                    "324_EXP-8-jaw-1_cam_222200039",
+                    "374_EXP-5-mouth_cam_222200049",
+                ],
+                loader=self.combined_loader,
+                dir=self.combined_video_dir,
+            ),
+            "orz": VideoTypeData(
+                ids=["323_EXP-5-mouth_cam_222200047", "370_EXP-9-jaw-2_cam_222200040"], loader=self.orz_loader, dir=self.orz_video_dir
+            ),
+            "vfhq": VideoTypeData(ids=["Clip+-1Jouc19Ixo+P0+C1+F4196-4320"], loader=self.vfhq_loader, dir=self.vfhq_video_dir),
+        }
+
+        def save_video(dir, frame_ids, video_path, ext=".jpg"):
+            save_frames_to_video(
+                (np.array(Image.open(os.path.join(dir, f"{frame_idx:06d}{ext}"))) for frame_idx in tqdm(frame_ids)),
+                video_path,
+                fps=10,
+            )
+
+        for type_data in data.values():
+            for id in type_data.ids:
+                # save target video
+                target_video_path = os.path.join(type_data.dir, f"{id}+target.mp4")
+                if True or not os.path.exists(target_video_path):
+                    row = type_data.loader[0].get_row(id)
+                    save_video(row.target.imgs_dir, range(0, row.num_frames - 1, 4), target_video_path, ext=row.img_ext)
+                    shutil.copyfile(row.source_img_path, os.path.join(type_data.dir, f"{id}+source.jpg"))
+
+                for loader in type_data.loader:
+                    row = loader.get_row(id)
+                    video_path = os.path.join(get_sub_dir(type_data.dir, id), f"{id}+{loader.name}.mp4")
+                    if not os.path.exists(video_path):
+                        save_video(row.frames_dir, range(0, row.num_frames - 1, 4), video_path)
+                        print(video_path)   
+
+    @cached_property
+    def vfhq_loader(self):
+        return [RowDataLoader(exp_name, dataset_name=DataSetNames.VFHQ) for exp_name in self.exp_name_list]
+
+    @cached_property
+    def vfhq_video_dir(self):
+        return get_sub_dir(self.save_dir, "vfhq")
+
+
 def comp():
     loader = CompLoader()
     # loader.all_data_rows[0].output.fast_review()
@@ -138,8 +225,8 @@ def comp():
 
 
 def main():
-    loader = CompLoaderImage("comp")
-    loader.comp_cross()
+    loader = CompLoaderVideo("comp")
+    loader.copy_video()
     # for data in loader.comp_cross_data:
     #     print(data)
 

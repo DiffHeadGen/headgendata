@@ -1,27 +1,18 @@
 from functools import cached_property
 import hashlib
 import os
-from pathlib import Path
 import shlex
 import subprocess
 import tempfile
 import cv2
 import face_alignment
+from expdataloader.utils import video_stream
+from expdataloader.utils import save_frames_to_video
 import insightface
 import numpy as np
 from tqdm import tqdm
 from expdataloader.utils import get_sub_dir, get_video_paths, get_video_num_frames
 from PIL import Image
-
-
-def video_stream(video_path):
-    cap = cv2.VideoCapture(video_path)
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        yield cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    cap.release()
 
 
 def get_first_frame(video_path):
@@ -30,46 +21,6 @@ def get_first_frame(video_path):
     assert ret, f"Cannot read video {video_path}"
     cap.release()
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-
-def combine_video_and_audio(video_file, audio_file, output, quality=17, copy_audio=True):
-    audio_codec = "-c:a copy" if copy_audio else ""
-    cmd = (
-        f"ffmpeg -i {video_file} -i {audio_file} -c:v libx264 -crf {quality} -pix_fmt yuv420p "
-        f"{audio_codec} -fflags +shortest -y -hide_banner -loglevel error {output}"
-    )
-    assert subprocess.run(shlex.split(cmd)).returncode == 0
-
-
-def convert_video(video_file, output, quality=17):
-    cmd = f"ffmpeg -i {video_file} -c:v libx264 -crf {quality} -pix_fmt yuv420p " f"-fflags +shortest -y -hide_banner -loglevel error {output}"
-    assert subprocess.run(shlex.split(cmd)).returncode == 0
-
-
-def reencode_audio(audio_file, output):
-    cmd = f"ffmpeg -i {audio_file} -y -hide_banner -loglevel error {output}"
-    assert subprocess.run(shlex.split(cmd)).returncode == 0
-
-
-def save_frames_to_video(frames, out_path, audio_path=None, fps=25, save_images=False):
-    out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_video_file = tempfile.NamedTemporaryFile("w", suffix=".mp4", dir=out_path.parent)
-    if save_images:
-        out_image_dir = out_path.with_suffix("")
-        out_image_dir.mkdir(exist_ok=True)
-    with LazyVideoWriter(tmp_video_file.name, fps=fps, save_images=save_images) as writer:
-        for frame in frames:
-            writer.write(frame)
-    if audio_path is not None:
-        # needs to re-encode audio to AAC format first, or the audio will be ahead of the video!
-        tmp_audio_file = tempfile.NamedTemporaryFile("w", suffix=".mp3", dir=out_path.parent)
-        reencode_audio(audio_path, tmp_audio_file.name)
-        combine_video_and_audio(tmp_video_file.name, tmp_audio_file.name, out_path)
-        tmp_audio_file.close()
-    else:
-        convert_video(tmp_video_file.name, out_path)
-    tmp_video_file.close()
 
 
 def clac_quad(face_landmarks):
@@ -104,41 +55,6 @@ def clac_quad(face_landmarks):
     qsize = np.hypot(*x) * 2
     return c, qsize
 
-
-class LazyVideoWriter:
-    def __init__(self, save_path, fps=25.0, save_images=False):
-        self.writer = None
-        assert save_path.endswith(".mp4"), "Only support mp4 format"
-        self.save_path = save_path
-        self.save_images = save_images
-        self.fps = fps
-        if save_images:
-            self.image_dir = Path(save_path).with_suffix("")
-            self.image_dir.mkdir(exist_ok=True)
-
-    def write(self, image: np.ndarray):
-        if self.writer is None:
-            size = image.shape[:2][::-1]
-            self.writer = cv2.VideoWriter(self.save_path, cv2.VideoWriter_fourcc(*"mp4v"), self.fps, size)
-        image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if self.save_images:
-            image_path = self.image_dir / f"{self.writer.get(cv2.CAP_PROP_FRAME_COUNT):06d}.png"
-            cv2.imwrite(str(image_path), image_bgr)
-        self.writer.write(image_bgr)
-
-    def release(self):
-        if self.writer is not None:
-            self.writer.release()
-            self.writer = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.release()
-        if exc_type is not None:
-            print(f"An exception occurred: {exc_val}")
-        return False
 
 class FaceDetector:
     def __init__(self, ctx_id=0, det_thresh=0.5, det_size=(640, 640)) -> None:

@@ -7,7 +7,8 @@ from natsort import natsorted
 from tqdm import tqdm
 from expdataloader.Retarget import Retargeter
 from expdataloader.utils import change_extension, count_images, extract_all_frames, get_file_name_without_ext, get_image_paths, get_sub_dir, merge_video, FileLock
-from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, COMBINED_TEST_DATASET, InputDataSet
+from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, COMBINED_TEST_DATASET, InputDataSet, DataSetNames
+
 import traceback
 import shutil
 from typing import TypeVar, Generic, List
@@ -170,26 +171,20 @@ class RowData:
 
 TROW = TypeVar("TROW", bound=RowData)
 
-class DataSetNames(Enum):
-    VFHQ = "VFHQ"
-    TEMP = "TEMP"
-    ORZ = "ORZ"
-    COMBINED = "COMBINED"
-
 class HeadGenLoader(Generic[TROW]):
     dataset:InputDataSet
     exp_name:str 
-    def __init__(self, name: str, row_type=RowData):
+    def __init__(self, name: str, row_type=RowData, dataset_name=DataSetNames.COMBINED):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
-        self.set_dataset(DataSetNames.COMBINED)
+        self.set_dataset(dataset_name)
     
     def set_dataset(self, dataset_name: DataSetNames):
         self.dataset_name = dataset_name
         if dataset_name == DataSetNames.VFHQ:
             self.dataset = VFHQ_TEST_DATASET
-            self.exp_name = "vfhq_output"
+            self.exp_name = "VFHQ_output"
         elif dataset_name == DataSetNames.TEMP:
             self.dataset = TEMP_TEST_DATASET
             self.exp_name = "temp_output"
@@ -214,7 +209,7 @@ class HeadGenLoader(Generic[TROW]):
     def get_all_data_rows(self):
         for target in self.dataset.values:
             row = self.row_type(target, target, OutputData(self.output_dir, target.data_name))
-            if os.path.exists(target.source_img_path):
+            if target.source_img_path and os.path.exists(target.source_img_path):
                 row.source_img_path = os.path.join(row.output_dir, os.path.basename(target.source_img_path))
                 if not os.path.exists(row.source_img_path):
                     shutil.copyfile(target.source_img_path, row.source_img_path)

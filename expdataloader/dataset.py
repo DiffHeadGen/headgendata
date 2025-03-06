@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import cached_property
 import os
 from pathlib import Path
@@ -19,7 +20,7 @@ class InputData:
         self.data_name = data_name
         self.dataset_dir = dataset_dir
         self.base_dir = os.path.join(dataset_dir, data_name)
-        self.source_img_path = os.path.join(self.base_dir, "source_cross.jpg")
+        self.source_img_path = None
 
     @cached_property
     def imgs_dir(self):
@@ -104,6 +105,7 @@ class ORZTestDataSet(InputDataSet):
     def get_all(self):
         for row in super().get_all():
             if "EXP" in row.data_name:
+                row.source_img_path = os.path.join(row.base_dir, "source.jpg")
                 yield row
 
 
@@ -117,6 +119,7 @@ class CombinedTestDataSet(InputDataSet):
     def get_all(self):
         for row in super().get_all():
             if "EXP" in row.data_name or "Clip" in row.data_name:
+                row.source_img_path = os.path.join(row.base_dir, "source_cross.jpg")
                 yield row
 
 
@@ -129,3 +132,9 @@ class TempTestDataSet(InputDataSet):
 
 
 TEMP_TEST_DATASET = TempTestDataSet()
+
+class DataSetNames(Enum):
+    VFHQ = "VFHQ"
+    TEMP = "TEMP"
+    ORZ = "ORZ"
+    COMBINED = "COMBINED"
