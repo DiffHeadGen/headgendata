@@ -10,7 +10,7 @@ setup(
         'Pillow',
         'opencv-python',
         'moviepy',
-        'numpy==1.26.0'
+        'numpy<=1.26.0',
         'face-alignment',
     ],
     extras_require={

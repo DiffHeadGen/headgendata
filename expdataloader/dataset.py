@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).parent.parent / "data"
 VFHQ_DIR = str(BASE_DIR / "VFHQ_testset")
 TEMP_TEST_DIR = str(BASE_DIR / "temp_testset")
 ORZ_DIR = str(BASE_DIR / "orz_testset")
+ORZ_ISOLATED_DIR = str(BASE_DIR / "orz_testset_isolated")
 COMBINED_DIR = str(BASE_DIR / "combined_testset")
 
 
@@ -112,6 +113,20 @@ class ORZTestDataSet(InputDataSet):
 ORZ_TEST_DATASET = ORZTestDataSet()
 
 
+class ORZIsolatedTestDataSet(InputDataSet):
+    def __init__(self):
+        super().__init__(ORZ_ISOLATED_DIR)
+
+    def get_all(self):
+        for row in super().get_all():
+            if "EXP" in row.data_name:
+                row.source_img_path = os.path.join(row.base_dir, "source_cross.jpg")
+                yield row
+
+
+ORZ_ISOLATED_TEST_DATASET = ORZIsolatedTestDataSet()
+
+
 class CombinedTestDataSet(InputDataSet):
     def __init__(self):
         super().__init__(COMBINED_DIR)
@@ -137,4 +152,5 @@ class DataSetNames(Enum):
     VFHQ = "VFHQ"
     TEMP = "TEMP"
     ORZ = "ORZ"
+    ORZ_ISOLATED = "ORZ_ISOLATED"
     COMBINED = "COMBINED"

@@ -1,5 +1,8 @@
 {
     "python.analysis.exclude": [
         "data/**/*"
+    ],
+    "cursorpyright.analysis.exclude": [
+        "data/**/*"
     ]
 }

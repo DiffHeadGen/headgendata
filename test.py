@@ -75,9 +75,9 @@ def ours():
 
 
 def merge_video():
-    from expdataloader.dataset import ORZ_TEST_DATASET
+    from expdataloader.dataset import ORZ_ISOLATED_TEST_DATASET
 
-    dataset = ORZ_TEST_DATASET
+    dataset = ORZ_ISOLATED_TEST_DATASET
     for data in dataset.values:
         print(data.video_path)
 
@@ -107,5 +107,6 @@ if __name__ == "__main__":
     # check_output()
     # testvoodoo()
     # copy_p4dv2()
-    loader = RowDataLoader("ours_v2")
-    loader.print_summary()
+    # loader = RowDataLoader("ours_v2")
+    # loader.print_summary()
+    merge_video()

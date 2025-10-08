@@ -7,7 +7,7 @@ from natsort import natsorted
 from tqdm import tqdm
 from expdataloader.Retarget import Retargeter
 from expdataloader.utils import change_extension, count_images, extract_all_frames, get_file_name_without_ext, get_image_paths, get_sub_dir, merge_video, FileLock
-from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, COMBINED_TEST_DATASET, InputDataSet, DataSetNames
+from expdataloader.dataset import InputData, VFHQ_TEST_DATASET, TEMP_TEST_DATASET, ORZ_TEST_DATASET, ORZ_ISOLATED_TEST_DATASET, COMBINED_TEST_DATASET, InputDataSet, DataSetNames
 
 import traceback
 import shutil
@@ -174,7 +174,7 @@ TROW = TypeVar("TROW", bound=RowData)
 class HeadGenLoader(Generic[TROW]):
     dataset:InputDataSet
     exp_name:str 
-    def __init__(self, name: str, row_type=RowData, dataset_name=DataSetNames.COMBINED):
+    def __init__(self, name: str, row_type=RowData, dataset_name=DataSetNames.ORZ_ISOLATED):
         self.base_dir = DATA_DIR
         self.name = name
         self.row_type = row_type
@@ -191,6 +191,9 @@ class HeadGenLoader(Generic[TROW]):
         elif dataset_name == DataSetNames.ORZ:
             self.dataset = ORZ_TEST_DATASET
             self.exp_name = "orz_output"
+        elif dataset_name == DataSetNames.ORZ_ISOLATED:
+            self.dataset = ORZ_ISOLATED_TEST_DATASET
+            self.exp_name = "orz_isolated_output"
         elif dataset_name == DataSetNames.COMBINED:
             self.dataset = COMBINED_TEST_DATASET
             self.exp_name = "combined_output"
