@@ -60,6 +60,16 @@ class CompLoader(RowDataLoader):
 
 
 class CompLoaderImage(RowDataLoader):
+    def __init__(
+        self,
+        name="comp_image",
+        comp_cross_file="comp_cross.txt",
+        comp_cross_output_dir="comp_cross_v2",
+    ):
+        super().__init__(name)
+        self.comp_cross_file = comp_cross_file
+        self.comp_cross_output_dir = comp_cross_output_dir
+
     @cached_property
     def exp_name_list(self):
         return ["ROME", "Protrait4Dv2", "VOODOO3D", "GAGAvatar", "FollowYourEmoji", "XPortrait", "ours"]
@@ -71,7 +81,7 @@ class CompLoaderImage(RowDataLoader):
     @cached_property
     def comp_cross_data(self):
         data = []
-        with open("comp_cross.txt") as f:
+        with open(self.comp_cross_file) as f:
             lines = f.readlines()
             for line in lines:
                 path = Path(line.strip())
@@ -110,7 +120,7 @@ class CompLoaderImage(RowDataLoader):
 
     @cached_property
     def comp_cross_dir(self):
-        return get_sub_dir("data", "comp_cross_v2")
+        return get_sub_dir("data", self.comp_cross_output_dir)
 
     def comp_cross_img_all(self):
         save_dir = self.comp_cross_dir
@@ -180,9 +190,15 @@ class CompLoaderVideo(RowDataLoader):
                 dir=self.combined_video_dir,
             ),
             "orz": VideoTypeData(
-                ids=["323_EXP-5-mouth_cam_222200047", "370_EXP-9-jaw-2_cam_222200040"], loader=self.orz_loader, dir=self.orz_video_dir
+                ids=["323_EXP-5-mouth_cam_222200047", "370_EXP-9-jaw-2_cam_222200040"],
+                loader=self.orz_loader,
+                dir=self.orz_video_dir,
             ),
-            "vfhq": VideoTypeData(ids=["Clip+-1Jouc19Ixo+P0+C1+F4196-4320"], loader=self.vfhq_loader, dir=self.vfhq_video_dir),
+            "vfhq": VideoTypeData(
+                ids=["Clip+-1Jouc19Ixo+P0+C1+F4196-4320"],
+                loader=self.vfhq_loader,
+                dir=self.vfhq_video_dir,
+            ),
         }
 
         def save_video(dir, frame_ids, video_path, ext=".jpg"):
@@ -206,7 +222,7 @@ class CompLoaderVideo(RowDataLoader):
                     video_path = os.path.join(get_sub_dir(type_data.dir, id), f"{id}+{loader.name}.mp4")
                     if not os.path.exists(video_path):
                         save_video(row.frames_dir, range(0, row.num_frames - 1, 4), video_path)
-                        print(video_path)   
+                        print(video_path)
 
     @cached_property
     def vfhq_loader(self):

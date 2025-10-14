@@ -103,10 +103,10 @@ def copy_p4dv2():
 if __name__ == "__main__":
     # mp_ldmks()
     # merge_video()
-    # xportrait()
+    xportrait()
     # check_output()
     # testvoodoo()
     # copy_p4dv2()
     # loader = RowDataLoader("ours_v2")
     # loader.print_summary()
-    merge_video()
+

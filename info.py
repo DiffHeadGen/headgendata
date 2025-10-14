@@ -6,7 +6,9 @@ def xportrait():
     loader.print_summary()
 
 def main():
-    xportrait()
+    # xportrait()
+    loader = HeadGenLoader("Protrait4Dv2")
+    loader.print_summary()
 
 if __name__ == '__main__':
     main()
